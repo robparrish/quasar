@@ -1,0 +1,7 @@
+# => Core <= #
+
+quasar - lightweight quantum simulator module
+
+# => Tests <= #
+
+test-quasar - unit tests for quasar
