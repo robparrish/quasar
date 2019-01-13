@@ -1,1 +1,1 @@
-from .quasar import Matrix, Gate
+from .quasar import Matrix, Gate, Circuit
