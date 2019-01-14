@@ -88,6 +88,16 @@ class Gate(object):
     of N qubits, with an implicit identity matrix acting on the remaining
     qubits. The Gate class specifies the (2**N,)*2 unitary matrix U for the N
     active qubits, but does not specify which qubits are active.
+
+    Usually, most users will not initialize their own Gates, but will use gates
+    from the standard library, which are defined as Gate class members (for
+    parameter-free gates) or Gate class methods (for parameter-including gates).
+    Some simple examples include:
+
+    >>> I = Gate.I
+    >>> Ry = Gate.Ry(theta=np.pi/4.0)
+    >>> SO4 = Gate.SO4(A=0.0, B=0.0, C=0.0, D=0.0, E=0.0, F=0.0)
+    >>> F = Gate.F(theta=np.pi/3.0)
     """
 
     def __init__(
@@ -517,11 +527,11 @@ class Circuit(object):
 
         An example Circuit construction is,
 
-        circuit = Circuit(N=2)
-        circuit.add_gate(T=0, key=0, Gate.H)
-        circuit.add_gate(T=0, key=(1,), Gate.X)
-        circuit.add_gate(T=1, key=(0,1), Gate.CNOT)
-        print circuit
+        >>> circuit = Circuit(N=2)
+        >>> circuit.add_gate(T=0, key=0, Gate.H)
+        >>> circuit.add_gate(T=0, key=(1,), Gate.X)
+        >>> circuit.add_gate(T=1, key=(0,1), Gate.CNOT)
+        >>> print(circuit)
         
         A Circuit is always constructed with a fixed number of qubits N, but
         the time window of the circuit is freely expandable from T=0 onward.
@@ -533,8 +543,8 @@ class Circuit(object):
         (int) contains the total number of time moments, including empty
         moments.
 
-        The core data of a Circuit is the gates attribute, which contains a
-        dict of (T, key) : Gate pairs for significant gates. The (T, key)
+        The core data of a Circuit is the gates attribute, which contains an
+        OrderedDict of (T, key) : Gate pairs for significant gates. The (T, key)
         compound key specifies the time moment of the gate T (int), and the qubit
         connections in key (tuple of int). len(key) is always gate.N.
         """
@@ -560,6 +570,8 @@ class Circuit(object):
         self.Ts = [] # [T] tells ordered, unique time moments
         self.TAs = set() # ({T,A}) tells occupied circuit indices
 
+    # > Simple Circuit characteristics < #
+
     @property
     def nmoment(self):
         """ The total number of time moments in the circuit (including blank moments) """
@@ -579,11 +591,6 @@ class Circuit(object):
     def ngate2(self):
         """ The total number of 2-body gates in the circuit. """
         return len([gate for gate in self.gates.values() if gate.N == 2])
-
-    @property
-    def nparam(self):
-        """ The total number of params in the circuit. """
-        return len(self.params)
 
     # > Gate addition < #
 
@@ -646,7 +653,7 @@ class Circuit(object):
     def subset(
         self,
         Ts,
-        copy=False,
+        copy=True,
         ):
 
         circuit = Circuit(N=self.N)
@@ -662,7 +669,7 @@ class Circuit(object):
     @staticmethod
     def concatenate(
         circuits,
-        copy=False,
+        copy=True,
         ):
 
         if any(x.N != circuits[0].N for x in circuits): 
@@ -680,7 +687,7 @@ class Circuit(object):
     def deadjoin(
         self,
         As,
-        copy=False,
+        copy=True,
         ):
 
         for A2, Aref in enumerate(As):
@@ -698,7 +705,7 @@ class Circuit(object):
     @staticmethod
     def adjoin(
         circuits,
-        copy=False,
+        copy=True,
         ):
 
         circuit = Circuit(N=sum(x.N for x in circuits))
@@ -712,7 +719,7 @@ class Circuit(object):
     
     def reversed(
         self,
-        copy=False,
+        copy=True,
         ):
 
         circuit = Circuit(N=self.N)
@@ -723,7 +730,7 @@ class Circuit(object):
 
     def nonredundant(
         self,
-        copy=False,
+        copy=True,
         ):
 
         circuit = Circuit(N=self.N)
@@ -874,27 +881,109 @@ class Circuit(object):
 
         return circuit2.nonredundant()
 
-    # > Parameter Access < #
+    # > Parameter Access/Manipulation < #
 
     @property
-    def params(self):
-        """ A dict of (T, key, param_name) : param_value for all mutable parameters in the circuit. """ 
-        params = {}
+    def nparam(self):
+        """ The total number of mutable parameters in the circuit. """
+        return len(self.param_keys)
+
+    @property
+    def param_keys(self):
+        """ A list of (T, key, param_name) for all mutable parameters in the circuit.
+
+        A global order of (T, key, param_name within gate) is used to guarantee
+        a stable, lexical ordering of circuit parameters for a given circuit.
+
+        Returns:
+            list of (int, tuple of int, str)) - ordered T moments, qubit
+                indices, and gate parameter names for all mutable parameters in
+                the circuit.
+        """
+        keys = []
         for key, gate in self.gates.iteritems():
             T, key2 = key
-            if gate.is_explicit: continue
-            for k, v in gate.params.iteritems():
-                params[(T, key2, k)] = v
-        return params
+            for name, v in gate.params.iteritems():
+                keys.append((T, key2, name))
+        keys.sort(key = lambda x : (x[0], x[1]))
+        return keys
+        
+    @property
+    def param_values(self):
+        """ A list of param values corresponding to param_keys for all mutable parameters in the circuit. 
+
+        Returns:
+            (list of float) - ordered parameter values with order corresponding
+                to param_keys for all mutable parameters in the circuit.
+        """
+        return [self.gates[(T, key)].params[name] for T, key, name in self.param_keys]
+
+    def set_param_values(
+        self,
+        values,
+        ):
+
+        """ Set the param values corresponding to param_keys for all mutable parameters in the circuit.
+
+        Params:
+            values (list of float) - ordered parameter values with order
+                corresponding to param_keys for all mutable parameters in the
+                circuit.
+        Result:
+            Parameters of self.gates are updated with new parameter values.
+        """
+
+        for k, v in zip(self.param_keys, values):
+            T, key, name = k
+            self.gates[(T, key)].set_param(key=name, param=v)
+    
+    @property
+    def params(self):
+        """ An OrderedDict of (T, key, param_name) : param_value for all mutable parameters in the circuit. 
+            The order follows that of param_keys.
+
+        Returns:
+            (OrderedDict of (int, tuple of int, str) : float) - ordered key :
+                value pairs for all mutable parameters in the circuit.
+        """ 
+        return collections.OrderedDict([(k, v) for k, v in zip(self.param_keys, self.param_values)])
 
     def set_params(
         self,
         params,
         ):
 
+        """ Set an arbitrary number of circuit parameters values by key, value specification.
+    
+        Params:
+            params (OrderedDict of (int, tuple of int, str) : float) - key :
+                value pairs for mutable parameters to set.
+
+        Result:
+            Parameters of self.gates are updated with new parameter values.
+        """
+    
         for k, v in params.iteritems():
             T, key2, name = k
             self.gates[(T, key2)].set_param(key=name, param=v)
+
+    @property
+    def param_str(self):
+        """ A human-readable string describing the circuit coordinates,
+            parameter name, gate name, and value of all mutable parameters in
+            this circuit.
+        
+        Returns:
+            (str) - human-readable string describing parameters in order
+                specified by param_keys.
+        """ 
+        s = ''
+        s += '%-5s %-10s %-10s %-10s: %24s\n' % ('T', 'Qubits', 'Name', 'Gate', 'Value')
+        for k, v in self.params.iteritems():
+            T, key2, name = k
+            gate = self.gates[(T, key2)]
+            s += '%-5d %-10s %-10s %-10s: %24.16E\n' % (T, key2, name, gate.name, v)
+        return s
 
     # > ASCII Circuit Diagrams < #
 
@@ -981,7 +1070,7 @@ class Circuit(object):
                         Aind = [Aind for Aind, B in enumerate(key2) if A == B][0]
                         seconds[idx][A] = gate.ascii_symbols[Aind]
                     else:
-                        raise RuntimeError('Unkown N>2 gate')
+                        raise RuntimeError('Unknown N>2 gate')
                 else:
                     seconds[idx][A] = '|'
                 # Gate connector
@@ -1022,8 +1111,6 @@ class Circuit(object):
         col_params='@C=1.0em',
         size_params='',
         use_lstick=True,
-        one_body_printing='pretty',
-        variable_printing=True,
         ):
 
         strval = ''
@@ -1068,8 +1155,6 @@ class Circuit(object):
     def latex_diagram_moment(
         self,
         T,
-        one_body_printing='pretty',
-        variable_printing=True,
         ):
 
         circuit = self.subset([T])
@@ -1089,35 +1174,23 @@ class Circuit(object):
             # Place gate lines in circuit
             if gate.N == 1:
                 A, = key2
-                # One-body rotation gates can be easily cleaned up
-                if one_body_printing == 'plain':
-                    Qstr = str(gate)
-                elif one_body_printing == 'pretty':
-                    Qstr = str(gate)
-                    # Try for rotation gate
-                    mobj = re.match(r'^R([xyz])\((\S+)\)$', Qstr)
-                    if mobj:
-                        if variable_printing:
-                            Qstr = 'R_%s (%s)' % (mobj.group(1), mobj.group(2))
-                        else:
-                            Qstr = 'R_%s' % mobj.group(1)
-                seconds[idx][A] = ' & \\gate{%s}\n' % Qstr
+                seconds[idx][A] = ' & \\gate{%s}\n' % gate.ascii_moments[0]
             elif gate.N == 2:
                 A, B = key2
-                if str(gate) == 'CNOT':
+                # Special cases
+                if gate.name == 'CNOT':
                     seconds[idx][A] = ' & \\ctrl{%d}\n' % (B-A) 
                     seconds[idx][B] = ' & \\targ\n'
-                if str(gate) == 'CZ':
+                elif gate.name == 'CZ':
                     seconds[idx][A] = ' & \\ctrl{%d}\n' % (B-A) 
                     seconds[idx][B] = ' & \\gate{Z}\n'
-                elif str(gate) == 'SWAP':
+                elif gate.name == 'SWAP':
                     seconds[idx][A] = ' & \\qswap \\qwx[%d]\n' % (B-A) 
                     seconds[idx][B] = ' & \\qswap\n'
-                elif str(gate) == 'U2':
-                    seconds[idx][A] = ' & \\gate{U_2^A} \\qwx[%d]\n' % (B-A) 
-                    seconds[idx][B] = ' & \\gate{U_2^B}\n'
+                # General case
                 else:
-                    raise RuntimeError('Unknown 2-body gate: %s' % gate)
+                    seconds[idx][A] = ' & \\gate{%s} \\qwx[%d]\n' % (gate.ascii_moments[0], (B-A))
+                    seconds[idx][B] = ' & \\gate{%s}\n' % gate.ascii_moments[1]
             else:
                 raise RuntimeError('Unknown N>2 body gate: %s' % gate)
 
