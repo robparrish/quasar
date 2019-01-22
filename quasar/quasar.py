@@ -320,7 +320,7 @@ Gate.CS = Gate(
     ascii_symbols=['@', 'S'],
     )
 """ SWAP gate """
-Gate.CZ = Gate(
+Gate.SWAP = Gate(
     N=2,
     Ufun = lambda params: Matrix.SWAP,
     params=collections.OrderedDict(),
@@ -637,6 +637,31 @@ class Circuit(object):
             self.TAs.add((T,A))
         if T not in self.Ts:
             self.Ts = list(sorted(self.Ts + [T]))
+
+    def gate(
+        self,
+        T,
+        key,
+        ):
+
+        """ Return the gate at a given moment T and qubit indices key
+
+        Params:
+            T (int) - the time index of the gate
+            key (int or tuple of int) - the qubit index or indices of the gate
+        Returns:
+            (Gate) - the gate at the specified circuit coordinates
+
+        For one body gate, can use as either of:
+            gate = circuit.gate(T, A)
+            gate = circuit.gate(T, (A,))
+        For two body gate, must use as:
+            gate = circuit.gate(T, (A, B))
+        """
+
+        # Make key a tuple regardless of input
+        key2 = (key,) if isinstance(key, int) else key
+        return self.gates[(T, key2)]
 
     # => Copy/Subsets/Concatenation <= #
 
@@ -970,7 +995,7 @@ class Circuit(object):
     @property
     def param_str(self):
         """ A human-readable string describing the circuit coordinates,
-            parameter name, gate name, and value of all mutable parameters in
+            parameter names, gate names, and values of all mutable parameters in
             this circuit.
         
         Returns:
@@ -990,7 +1015,8 @@ class Circuit(object):
     def __str__(
         self,
         ):
-        
+
+        """ String representation of this Circuit (an ASCII circuit diagram). """
         return self.diagram(time_lines='both')
 
     def diagram(
@@ -1212,13 +1238,20 @@ class Circuit(object):
         """ Propagate wavefunction wfn through this circuit. 
 
         Params:
-            wfn (np.ndarray of shape (2**self.N,) and a complex dtype or None)
+            wfn (np.ndarray of shape (2**self.N,) or None)
                 - the initial wavefunction. If None, the reference state
-                \prod_{A} |0_A> will be used.
-            dtype (complex dtype) - the dtype to allocate the reference state
-                at if wfn is None.
+                  \prod_{A} |0_A> will be used.
+            dtype (real or complex dtype) - the dtype to perform the
+                computation at. The input wfn and all gate unitary operators
+                will be cast to this type and the returned wfn will be of this
+                dtype. Note that using real dtypes (float64 or float32) can
+                reduce storage and runtime, but the imaginary parts of the
+                input wfn and all gate unitary operators will be discarded
+                without checking. In these cases, the user is responsible for
+                ensuring that the circuit works on O(2^N) rather than U(2^N)
+                and that the output is valid.
         Returns:
-            (np.ndarray of shape (2**self.N,) and a complex dtype) - the
+            (np.ndarray of shape (2**self.N,) and dtype=dtype) - the
                 propagated wavefunction. Note that the input wfn is not
                 changed by this operation.
         """
@@ -1251,13 +1284,20 @@ class Circuit(object):
         this operation.
 
         Params:
-            wfn (np.ndarray of shape (2**self.N,) and a complex dtype or None)
+            wfn (np.ndarray of shape (2**self.N,) or None)
                 - the initial wavefunction. If None, the reference state
-                \prod_{A} |0_A> will be used.
-            dtype (complex dtype) - the dtype to allocate the reference state
-                at if wfn is None.
+                  \prod_{A} |0_A> will be used.
+            dtype (real or complex dtype) - the dtype to perform the
+                computation at. The input wfn and all gate unitary operators
+                will be cast to this type and the returned wfn will be of this
+                dtype. Note that using real dtypes (float64 or float32) can
+                reduce storage and runtime, but the imaginary parts of the
+                input wfn and all gate unitary operators will be discarded
+                without checking. In these cases, the user is responsible for
+                ensuring that the circuit works on O(2^N) rather than U(2^N)
+                and that the output is valid.
         Returns (at each yield):
-            (int, np.ndarray of shape (2**self.N,) and a complex dtype) - the
+            (int, np.ndarray of shape (2**self.N,) and dtype=dtype) - the
                 time moment and current state of the wavefunction at each step
                 along the propagation. Note that the input wfn is not
                 changed by this operation.
@@ -1267,6 +1307,8 @@ class Circuit(object):
         if wfn is None:
             wfn = np.zeros((2**self.N,), dtype=dtype)
             wfn[0] = 1.0
+        else:
+            wfn = np.array(wfn, dtype=dtype)
 
         # Don't modify user data, but don't copy all the time
         wfn1 = np.copy(wfn)
@@ -1280,14 +1322,14 @@ class Circuit(object):
                     wfn2 = Circuit.apply_gate_1(
                         wfn1=wfn1,
                         wfn2=wfn2,
-                        U=gate.U,
+                        U=np.array(gate.U, dtype=dtype),
                         A=key2[0],
                         )
                 elif gate.N == 2:
                     wfn2 = Circuit.apply_gate_2(
                         wfn1=wfn1,
                         wfn2=wfn2,
-                        U=gate.U,
+                        U=np.array(gate.U, dtype=dtype),
                         A=key2[0],
                         B=key2[1],
                         )
