@@ -55,7 +55,7 @@ def test_matrix():
 
     # Dict of test results
     checks = collections.OrderedDict()
-    for key, val in refs.iteritems():
+    for key, val in refs.items():
         x = np.max(np.abs(val - quasar.Matrix.__dict__[key]))
         checks[key] = (x, x < 1.0E-16)
 
@@ -63,15 +63,15 @@ def test_matrix():
 
     # Print out detailed test results
     print('Test Matrix:')
-    for key, value in checks.iteritems():
-        print('%-20s: %11.3E %s' % (
+    for key, value in checks.items():
+        print(('%-20s: %11.3E %s' % (
             key,
             value[0],
             'OK' if value[1] else 'BAD',
-            ))
+            )))
 
     # Return True if all tests passed else False
-    return all(x[1] for x in checks.values())
+    return all(x[1] for x in list(checks.values()))
     
 def test_explicit_gates():
 
@@ -89,7 +89,7 @@ def test_explicit_gates():
     gates['SWAP'] = (2, refs['SWAP'], 'SWAP', ['X', 'X'])
 
     checks = collections.OrderedDict()
-    for key, val in gates.iteritems():
+    for key, val in gates.items():
         gate = quasar.Gate.__dict__[key]
         checks[key] = (
             gate.N == val[0],
@@ -101,19 +101,19 @@ def test_explicit_gates():
     
     # Print out detailed test results
     print('Test Explicit Gates: (N, U, name, ascii_symbols, params)')
-    for key, value in checks.iteritems():
-        print('%-20s: %r %s' % (
+    for key, value in checks.items():
+        print(('%-20s: %r %s' % (
             key, value, 'OK' if all(value) else 'BAD',
-            ))
+            )))
 
-    return all(all(x) for x in checks.values())
+    return all(all(x) for x in list(checks.values()))
 
 
 def test_gates():
 
     I = quasar.Gate.I
-    print I
-    print I.U
+    print(I)
+    print(I.U)
 
 def test_ghz_5():
 
@@ -128,11 +128,11 @@ def test_ghz_5():
     circuit.add_gate(T=6, key=3, gate=quasar.Gate.H)   
     circuit.add_gate(T=6, key=4, gate=quasar.Gate.H)   
 
-    print circuit
+    print(circuit)
 
-    print circuit.compressed()
+    print(circuit.compressed())
     
-    print circuit.Ts
+    print(circuit.Ts)
 
 def test_linear_4():
 
@@ -141,8 +141,8 @@ def test_linear_4():
     circuit.add_gate(T=1, key=(3,0), gate=quasar.Gate.SO4(A=0.0, B=0.0, C=0.0, D=0.0, E=0.0, F=0.0))
     circuit.add_gate(T=0, key=(0,1), gate=quasar.Gate.SO4(A=0.0, B=0.0, C=0.0, D=0.0, E=0.0, F=0.0))
     circuit.add_gate(T=0, key=(2,3), gate=quasar.Gate.SO4(A=0.0, B=0.0, C=0.0, D=0.0, E=0.0, F=0.0))
-    print circuit 
-    print circuit.param_str
+    print(circuit) 
+    print(circuit.param_str)
         
 
 if __name__ == '__main__':

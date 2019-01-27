@@ -136,8 +136,8 @@ class Gate(object):
         if self.N <= 0: raise RuntimeError('N <= 0') 
         if self.U.shape != (2**self.N,)*2: raise RuntimeError('U must be shape (2**N,)*2')
         if not isinstance(self.params, collections.OrderedDict): raise RuntimeError('params must be collections.OrderedDict')
-        if not all(isinstance(_, str) for _ in self.params.keys()): raise RuntimeError('params keys must all be str')
-        if not all(isinstance(_, float) for _ in self.params.values()): raise RuntimeError('params values must all be float')
+        if not all(isinstance(_, str) for _ in list(self.params.keys())): raise RuntimeError('params keys must all be str')
+        if not all(isinstance(_, float) for _ in list(self.params.values())): raise RuntimeError('params values must all be float')
         if not isinstance(self.name, str): raise RuntimeError('name must be str')
         if not isinstance(self.ascii_symbols, list): raise RuntimeError('ascii_symbols must be list')
         if len(self.ascii_symbols) != self.N: raise RuntimeError('len(ascii_symbols) != N')
@@ -206,7 +206,7 @@ class Gate(object):
             self.params is updated with the contents of params by calling
                 self.set_param for each key/value pair.
         """
-        for key, param in params.iteritems():
+        for key, param in params.items():
             self.set_param(key=key, param=param)
 
 # > Explicit 1-body gates < #
@@ -585,12 +585,12 @@ class Circuit(object):
     @property
     def ngate1(self):
         """ The total number of 1-body gates in the circuit. """
-        return len([gate for gate in self.gates.values() if gate.N == 1])
+        return len([gate for gate in list(self.gates.values()) if gate.N == 1])
 
     @property
     def ngate2(self):
         """ The total number of 2-body gates in the circuit. """
-        return len([gate for gate in self.gates.values() if gate.N == 2])
+        return len([gate for gate in list(self.gates.values()) if gate.N == 2])
 
     # > Gate addition < #
 
@@ -670,7 +670,7 @@ class Circuit(object):
         ):
 
         circuit = Circuit(N=self.N)
-        for key, gate in self.gates.iteritems():
+        for key, gate in self.gates.items():
             T, key2 = key
             circuit.add_gate(T=T, key=key2, gate=gate.copy())
         return circuit
@@ -684,7 +684,7 @@ class Circuit(object):
         circuit = Circuit(N=self.N)
         for T2, Tref in enumerate(Ts):
             if Tref >= self.nmoment: raise RuntimeError('T >= self.nmoment: %d' % Tref)
-        for key, gate in self.gates.iteritems():
+        for key, gate in self.gates.items():
             T, key2 = key
             if T in Ts:
                 T2 = [T2 for T2, Tref in enumerate(Ts) if Tref == T][0]
@@ -703,7 +703,7 @@ class Circuit(object):
         circuit = Circuit(N=circuits[0].N)
         Tstart = 0
         for circuit2 in circuits:   
-            for key, gate in circuit2.gates.iteritems():
+            for key, gate in circuit2.gates.items():
                 T, key2 = key
                 circuit.add_gate(T=T+Tstart, key=key2, gate=gate.copy() if copy else gate)
             Tstart += circuit2.nmoment
@@ -721,7 +721,7 @@ class Circuit(object):
         Amap = { v : k for k, v in enumerate(As) }
 
         circuit = Circuit(N=len(As))
-        for key, gate in self.gates.iteritems():
+        for key, gate in self.gates.items():
             T, key2 = key
             if all(x in Amap for x in key2):
                 circuit.add_gate(T=T, key=tuple(Amap[x] for x in key2), gate=gate.copy() if copy else gate)
@@ -736,7 +736,7 @@ class Circuit(object):
         circuit = Circuit(N=sum(x.N for x in circuits))
         Astart = 0
         for circuit2 in circuits:   
-            for key, gate in circuit2.gates.iteritems():
+            for key, gate in circuit2.gates.items():
                 T, key2 = key
                 circuit.add_gate(T=T, key=tuple(x + Astart for x in key2), gate=gate.copy() if copy else gate)
             Astart += circuit2.N
@@ -748,7 +748,7 @@ class Circuit(object):
         ):
 
         circuit = Circuit(N=self.N)
-        for key, gate in self.gates.iteritems():
+        for key, gate in self.gates.items():
             T, key2 = key
             circuit.add_gate(T=self.nmoment-T-1, key=key2, gate=gate)
         return circuit
@@ -760,7 +760,7 @@ class Circuit(object):
 
         circuit = Circuit(N=self.N)
         Tmap = { v : k for k, v in enumerate(sorted(self.Ts)) }
-        for key, gate in self.gates.iteritems():
+        for key, gate in self.gates.items():
             T, key2 = key
             circuit.add_gate(T=Tmap[T], key=key2, gate=gate)
         return circuit
@@ -778,7 +778,7 @@ class Circuit(object):
         # Jam consecutive 1-body gates (removes runs of 1-body gates)
         circuit1 = self.copy()
         plan = [[0 for x in range(self.nmoment)] for y in range(self.N)]
-        for key, gate in circuit1.gates.iteritems():
+        for key, gate in circuit1.gates.items():
             T, key2 = key
             if gate.N == 1:
                 A, = key2
@@ -806,7 +806,7 @@ class Circuit(object):
                     circuit2.add_gate(T=Tstar, key=(A,), gate=Gate.U1(U=U))
                     Tstar = None
                     U = None
-        for key, gate in circuit1.gates.iteritems():
+        for key, gate in circuit1.gates.items():
             T, key2 = key
             if gate.N == 2:
                 circuit2.add_gate(T=T, key=key2, gate=gate)
@@ -814,7 +814,7 @@ class Circuit(object):
         # Jam 1-body gates into 2-body gates if possible (not possible if 1-body gate wire)
         circuit1 = circuit2
         plan = [[0 for x in range(self.nmoment)] for y in range(self.N)]
-        for key, gate in circuit1.gates.iteritems():
+        for key, gate in circuit1.gates.items():
             T, key2 = key
             if gate.N == 1:
                 A, = key2
@@ -827,7 +827,7 @@ class Circuit(object):
                 raise RuntimeError("N > 2")
         circuit2 = Circuit(N=self.N)
         jammed_gates = {}                 
-        for key, gate in circuit1.gates.iteritems():
+        for key, gate in circuit1.gates.items():
             if gate.N != 2: continue
             T, key2 = key
             A, B = key2
@@ -860,7 +860,7 @@ class Circuit(object):
                 jammed_gates[T2, (B,)] = gate1
             circuit2.add_gate(T=T, key=key2, gate=Gate.U2(U=U))
         # Unjammed gates (should all be 1-body on 1-body wires) 
-        for key, gate in circuit1.gates.iteritems():
+        for key, gate in circuit1.gates.items():
             if gate.N != 1: continue
             T, key2 = key
             if key not in jammed_gates:
@@ -872,7 +872,7 @@ class Circuit(object):
         jammed_gates = {}
         for T in range(circuit1.nmoment):
             circuit3 = circuit1.subset([T])
-            for key, gate in circuit3.gates.iteritems():
+            for key, gate in circuit3.gates.items():
                 if gate.N != 2: continue
                 T4, key2 = key
                 if (T, key2) in jammed_gates: continue
@@ -898,7 +898,7 @@ class Circuit(object):
                 for key, gate, trans in jams:
                     jammed_gates[key] = gate
         # Unjammed gates (should all be 1-body on 1-body wires)
-        for key, gate in circuit1.gates.iteritems():
+        for key, gate in circuit1.gates.items():
             if gate.N != 1: continue
             T, key2 = key
             if key not in jammed_gates:
@@ -926,9 +926,9 @@ class Circuit(object):
                 the circuit.
         """
         keys = []
-        for key, gate in self.gates.iteritems():
+        for key, gate in self.gates.items():
             T, key2 = key
-            for name, v in gate.params.iteritems():
+            for name, v in gate.params.items():
                 keys.append((T, key2, name))
         keys.sort(key = lambda x : (x[0], x[1]))
         return keys
@@ -988,7 +988,7 @@ class Circuit(object):
             Parameters of self.gates are updated with new parameter values.
         """
     
-        for k, v in params.iteritems():
+        for k, v in params.items():
             T, key2, name = k
             self.gates[(T, key2)].set_param(key=name, param=v)
 
@@ -1004,7 +1004,7 @@ class Circuit(object):
         """ 
         s = ''
         s += '%-5s %-10s %-10s %-10s: %24s\n' % ('T', 'Qubits', 'Name', 'Gate', 'Value')
-        for k, v in self.params.iteritems():
+        for k, v in self.params.items():
             T, key2, name = k
             gate = self.gates[(T, key2)]
             s += '%-5d %-10s %-10s %-10s: %24.16E\n' % (T, key2, name, gate.name, v)
@@ -1075,7 +1075,7 @@ class Circuit(object):
         seconds = [{}]
         # list (total seconds) of dict of A -> interstitial symbol
         seconds2 = [{}]
-        for key, gate in circuit.gates.iteritems():
+        for key, gate in circuit.gates.items():
             T2, key2 = key
             # Find the first second this gate fits within (or add a new one)
             for idx, second in enumerate(seconds):
@@ -1104,7 +1104,7 @@ class Circuit(object):
                     seconds2[idx][A] = '|'
 
         # + [1] for the - null character
-        wseconds = [max([len(v) for k, v in second.iteritems()] + [1]) for second in seconds]
+        wseconds = [max([len(v) for k, v in second.items()] + [1]) for second in seconds]
         wtot = sum(wseconds)    
 
         # Adjust widths for T field
@@ -1187,7 +1187,7 @@ class Circuit(object):
 
         # list (total seconds) of dict of A -> gate symbol
         seconds = [{}]
-        for key, gate in circuit.gates.iteritems():
+        for key, gate in circuit.gates.items():
             T2, key2 = key
             # Find the first second this gate fits within (or add a new one)
             for idx, second in enumerate(seconds):
@@ -1316,7 +1316,7 @@ class Circuit(object):
 
         for T in range(self.nmoment):
             circuit = self.subset([T])
-            for key, gate in circuit.gates.iteritems():
+            for key, gate in circuit.gates.items():
                 T, key2 = key
                 if gate.N == 1:
                     wfn2 = Circuit.apply_gate_1(
