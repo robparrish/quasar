@@ -1,7 +1,8 @@
-# => Core <= #
+*Contents*    
 
 quasar - lightweight quantum simulator module
+test - unit tests for quasar
 
-# => Tests <= #
+*Contact* 
 
-test-quasar - unit tests for quasar
+Rob Parrish - robparrish@gmail.com
