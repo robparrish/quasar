@@ -22,6 +22,38 @@
 import numpy as np
 import collections
 
+""" Quasar: an ultralite quantum simulator
+
+Note on Qubit Order:
+
+We use the standard QIS qubit order of Nielsen and Chuang, where the qubits are
+ordered from left to right in the ket, i.e., |0123>. For instance, the circuit:
+
+T   : |0|
+         
+|0> : -H-
+         
+|1> : ---
+         
+|2> : ---
+         
+|3> : ---
+
+T   : |0|
+
+Produces the state (|0000> + |1000>) / sqrt(2), which appears in the simulated
+state vector as:
+
+[0.70710678 0.         0.         0.         0.         0.
+ 0.         0.         0.70710678 0.         0.         0.
+ 0.         0.         0.         0.        ]
+
+E.g., the 0-th (|0000>) and 8-th (|1000>) coefficient are set.
+
+This ordering is used in many places in QIS, e.g., Cirq, but the opposite
+ordering is also sometimes seen, e.g., in Qiskit.
+"""
+
 # => Matrix class <= #
 
 class Matrix(object):
@@ -105,7 +137,7 @@ class Gate(object):
 
     """ Class Gate represents a general N-body quantum gate. 
 
-    An N-Body quantum gate applies a unitary operator to the state of a subset
+    An N-body quantum gate applies a unitary operator to the state of a subset
     of N qubits, with an implicit identity matrix acting on the remaining
     qubits. The Gate class specifies the (2**N,)*2 unitary matrix U for the N
     active qubits, but does not specify which qubits are active.
@@ -118,7 +150,7 @@ class Gate(object):
     >>> I = Gate.I
     >>> Ry = Gate.Ry(theta=np.pi/4.0)
     >>> SO4 = Gate.SO4(A=0.0, B=0.0, C=0.0, D=0.0, E=0.0, F=0.0)
-    >>> F = Gate.F(theta=np.pi/3.0)
+    >>> CF = Gate.CF(theta=np.pi/3.0)
     """
 
     def __init__(
@@ -1338,7 +1370,7 @@ class Circuit(object):
         for T in range(self.nmoment):
             circuit = self.subset([T])
             for key, gate in circuit.gates.items():
-                T, key2 = key
+                T2, key2 = key
                 if gate.N == 1:
                     wfn2 = Circuit.apply_gate_1(
                         wfn1=wfn1,
