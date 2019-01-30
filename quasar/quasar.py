@@ -79,7 +79,7 @@ class Matrix(object):
     S = np.array([[1.0, 0.0], [0.0, 1.0j]], dtype=np.complex128)
     T = np.array([[1.0, 0.0], [0.0, np.exp(np.pi/4.0*1.j)]], dtype=np.complex128)
     H = 1.0 / np.sqrt(2.0) * np.array([[1.0, 1.0], [1.0, -1.0]], dtype=np.complex128)
-    # exp(-i (pi/2) * X) : Z -> Y basis transformation
+    # exp(+i (pi/4) * X) : Z -> Y basis transformation
     Rx2 = 1.0 / np.sqrt(2.0) * np.array([[1.0, +1.0j], [+1.0j, 1.0]], dtype=np.complex128)
     Rx2T = 1.0 / np.sqrt(2.0) * np.array([[1.0, -1.0j], [-1.0j, 1.0]], dtype=np.complex128)
 
@@ -106,6 +106,7 @@ class Matrix(object):
         [0.0, 0.0, 0.0, 1.0],
         [0.0, 0.0, 1.0, 0.0],
         ], dtype=np.complex128)
+    CNOT = CX
     CY = np.array([
         [1.0, 0.0, 0.0, 0.0],
         [0.0, 1.0, 0.0, 0.0],
@@ -130,6 +131,24 @@ class Matrix(object):
         [0.0, 1.0, 0.0, 0.0],
         [0.0, 0.0, 0.0, 1.0],
         ], dtype=np.complex128)
+
+    @staticmethod
+    def Rx(theta):
+        c = np.cos(theta)
+        s = np.sin(theta)
+        return np.array([[c, -1.j*s], [-1.j*s, c]], dtype=np.complex128)
+
+    @staticmethod
+    def Ry(theta):
+        c = np.cos(theta)
+        s = np.sin(theta)
+        return np.array([[c, -s], [+s, c]], dtype=np.complex128)
+
+    @staticmethod
+    def Rz(theta):
+        c = np.cos(theta)
+        s = np.sin(theta)
+        return np.array([[c-1.j*s, 0.0], [0.0, c+1.j*s]], dtype=np.complex128)
     
 # => Gate class <= #
 
@@ -392,7 +411,7 @@ def _GateRx(theta):
         theta = params['theta']
         c = np.cos(theta)
         s = np.sin(theta)
-        return np.array([[c, -1.j*s], [+1.j*s, c]], dtype=np.complex128)
+        return np.array([[c, -1.j*s], [-1.j*s, c]], dtype=np.complex128)
     
     return Gate(
         N=1,
@@ -764,16 +783,16 @@ class Circuit(object):
 
     def deadjoin(
         self,
-        As,
+        keys,
         copy=True,
         ):
 
-        for A2, Aref in enumerate(As):
+        for A2, Aref in enumerate(keys):
             if Aref >= self.N: raise RuntimeError('A >= self.A: %d' % Aref)
 
-        Amap = { v : k for k, v in enumerate(As) }
+        Amap = { v : k for k, v in enumerate(keys) }
 
-        circuit = Circuit(N=len(As))
+        circuit = Circuit(N=len(keys))
         for key, gate in self.gates.items():
             T, key2 = key
             if all(x in Amap for x in key2):
