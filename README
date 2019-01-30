@@ -18,9 +18,8 @@ less than 1/10th of the time.
  * Most important: I really enjoyed reading Jarrod McClean's great post on
 using `numpy` for quantum circuit simulation:
 https://jarrodmcclean.com/basic-quantum-circuit-simulation-in-python.  Jarrod
-is totally right that `numpy` is all you need to do quantum circuit simulation
-- with a good `numpy` quantum circuit simulator, you can run deep circuits with
-  ~32 qubits in no time on classical hardware (state vector memory is much more
+is totally right that `numpy` is all you need to do quantum circuit simulation - with a good `numpy` quantum circuit simulator, you can run deep circuits with
+~32 qubits in no time on classical hardware (state vector memory is much more
 of a bottleneck). If you need between ~34-40 qubits, you need a DOE
 supercomputer, Google TPU pod, or similar for the required memory. And if you
 need >48 qubits (being generous), you are SOL. So there is only a very narrow
