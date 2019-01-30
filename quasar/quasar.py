@@ -741,6 +741,15 @@ class Circuit(object):
         self,
         ):
 
+        """ Return a copy of circuit self so that parameter modifications in
+            the copy do not affect self.
+
+        Returns:
+            (Circuit) - copy of self with all Gate objects copied deeply enough
+                to remove parameter dependencies between self and returned
+                Circuit.
+        """
+
         circuit = Circuit(N=self.N)
         for key, gate in self.gates.items():
             T, key2 = key
@@ -752,6 +761,18 @@ class Circuit(object):
         Ts,
         copy=True,
         ):
+
+        """ Return a Circuit with a subset of time moments Ts.
+
+        Params:
+            Ts (list of int) - ordered time moments to slice into time moments
+                [0,1,2,...] in the returned circuit.
+            copy (bool) - copy Gate elements to remove parameter dependencies
+                between self and returned circuit (True - default) or not
+                (False). 
+        Returns:
+            (Circuit) - the time-sliced circuit.
+        """
 
         circuit = Circuit(N=self.N)
         for T2, Tref in enumerate(Ts):
@@ -768,6 +789,18 @@ class Circuit(object):
         circuits,
         copy=True,
         ):
+
+        """ Concatenate a list of Circuits in time.
+        
+        Params:
+            circuits (list of Circuit) - the ordered list of Circuit objects to
+                concatenate in time.
+            copy (bool) - copy Gate elements to remove parameter dependencies
+                between circuits and returned circuit (True - default) or not
+                (False). 
+        Returns:
+            (Circuit) - the time-concatenated circuit.
+        """
 
         if any(x.N != circuits[0].N for x in circuits): 
             raise RuntimeError('Circuits must all have same N to be concatenated')
@@ -787,6 +820,18 @@ class Circuit(object):
         copy=True,
         ):
 
+        """ Return a circuit with a subset of spatial qubit keys.
+
+        Params:
+            keys (list of int) - ordered qubit indices to slice in spatial
+                indices into the [0,1,2...] indices in the returned circuit.
+            copy (bool) - copy Gate elements to remove parameter dependencies
+                between self and returned circuit (True - default) or not
+                (False). 
+        Returns:
+            (Circuit) - the qubit-sliced circuit.
+        """
+
         for A2, Aref in enumerate(keys):
             if Aref >= self.N: raise RuntimeError('A >= self.A: %d' % Aref)
 
@@ -805,6 +850,17 @@ class Circuit(object):
         copy=True,
         ):
 
+        """ Adjoin a list of Circuits in spatial qubit indices.
+        
+        Params:
+            circuits (list of Circuit) - the ordered list of Circuit objects to
+                adjoin in spatial qubit indices.
+            copy (bool) - copy Gate elements to remove parameter dependencies
+                between circuits and returned circuit (True - default) or not
+                (False). 
+        Returns:
+            (Circuit) - the spatially qubit-adjoined circuit.
+        """
         circuit = Circuit(N=sum(x.N for x in circuits))
         Astart = 0
         for circuit2 in circuits:   
@@ -819,6 +875,19 @@ class Circuit(object):
         copy=True,
         ):
 
+        """ Return a circuit with gate operations in reversed time order.
+
+        Note that the gates are not transposed/adjointed => this is not
+            generally equivalent to time reversal.
+
+        Params:
+            copy (bool) - copy Gate elements to remove parameter dependencies
+                between self and returned circuit (True - default) or not
+                (False). 
+        Returns:
+            (Circuit) - the reversed circuit.
+        """
+
         circuit = Circuit(N=self.N)
         for key, gate in self.gates.items():
             T, key2 = key
@@ -829,6 +898,16 @@ class Circuit(object):
         self,
         copy=True,
         ):
+
+        """ Return a circuit with empty time moments removed.
+
+        Params:
+            copy (bool) - copy Gate elements to remove parameter dependencies
+                between self and returned circuit (True - default) or not
+                (False). 
+        Returns:
+            (Circuit) - the time-dense circuit.
+        """
 
         circuit = Circuit(N=self.N)
         Tmap = { v : k for k, v in enumerate(sorted(self.Ts)) }
@@ -841,10 +920,20 @@ class Circuit(object):
         self,
         ):
 
-        """ Return an equivalent circuit with 1/2-body gates merged together to
-            minimize the number of gates by using composite 1- and 2-body gate
-            operations.
-    
+        """ Return an equivalent time-dense circuit with 1- and 2-body gates
+            merged together to minimize the number of gates by using composite
+            1- and 2-body gate operations. This operation is designed to reduct
+            the runtime of state vector simulation by reducing the number of 1-
+            and 2-body gate operations that must be simulated.
+
+        This operation freezes the current parameter values of all gates, and
+        constructs composite 1- and 2-body gates from the current values of the gate
+        unitary matrices U. Therefore, the returned circuit will have no
+        parameters, and compressed will have to be called on the original
+        circuit again if the parameters change.
+
+        Returns:
+            (Circuit) - the compressed circuit.
         """
 
         # Jam consecutive 1-body gates (removes runs of 1-body gates)
@@ -1089,12 +1178,24 @@ class Circuit(object):
         ):
 
         """ String representation of this Circuit (an ASCII circuit diagram). """
-        return self.diagram(time_lines='both')
+        return self.ascii_diagram(time_lines='both')
 
-    def diagram(
+    def ascii_diagram(
         self,
         time_lines='both',
         ):
+
+        """ Return a simple ASCII string diagram of the circuit.
+
+        Params:
+            time_lines (str) - specification of time lines:
+                "both" - time lines on top and bottom (default)
+                "top" - time lines on top 
+                "bottom" - time lines on bottom
+                "neither" - no time lines
+        Returns:
+            (str) - the ASCII string diagram
+        """
 
         # Left side states
         Wd = int(np.ceil(np.log10(self.N)))
@@ -1135,11 +1236,24 @@ class Circuit(object):
 
         return strval
 
-    def diagram_moment(
+    def ascii_diagram_moment(
         self,
         T,
         adjust_for_T=True,
         ):
+
+        """ Return an ASCII string diagram for a given time moment T.
+
+        Users should not generally call this utility routine - see
+        ascii_diagram instead.
+
+        Params:
+            T (int) - time moment to diagram
+            adjust_for_T (bool) - add space adjustments for the length of time
+                lines.
+        Returns:
+            (str) - ASCII diagram for the given time moment.
+        """
 
         circuit = self.subset([T])
 
@@ -1211,6 +1325,17 @@ class Circuit(object):
         use_lstick=True,
         ):
 
+        """ Returns a LaTeX Qcircuit diagram specification as an ASCII string. 
+
+        Params:
+            row_params (str) - Qcircuit row layout specification
+            col_params (str) - Qcircuit col layout specification
+            size_params (str) - Qcircuit size layout specification
+            use_lstick (bool) - put lstick kets in (True) or not (False)
+        Returns:    
+            (str) - LaTeX Qcircuit diagram specification as an ASCII string.
+        """
+
         strval = ''
 
         # Header
@@ -1255,6 +1380,17 @@ class Circuit(object):
         T,
         ):
 
+        """ Return a LaTeX Qcircuit diagram for a given time moment T.
+
+        Users should not generally call this utility routine - see
+        latex_diagram instead.
+
+        Params:
+            T (int) - time moment to diagram
+        Returns:
+            (str) - LaTeX Qcircuit diagram for the given time moment.
+        """
+
         circuit = self.subset([T])
 
         # list (total seconds) of dict of A -> gate symbol
@@ -1276,7 +1412,7 @@ class Circuit(object):
             elif gate.N == 2:
                 A, B = key2
                 # Special cases
-                if gate.name == 'CNOT':
+                if gate.name == 'CNOT' or gate.name == 'CX':
                     seconds[idx][A] = ' & \\ctrl{%d}\n' % (B-A) 
                     seconds[idx][B] = ' & \\targ\n'
                 elif gate.name == 'CZ':
