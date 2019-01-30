@@ -4,8 +4,14 @@ Quasar: an ultralight python-2.7/python-3.X quantum  circuit simulator package.
 
 # Simple Use
 
-```
+```python
 import quasar
+circuit = quasar.Circuit(N=4)
+circuit.add_gate(T=0, key=0, gate=quasar.Gate.H)
+circuit.add_gate(T=1, key=(0,1), gate=quasar.Gate.CNOT)
+circuit.add_gate(T=2, key=(1,2), gate=quasar.Gate.CNOT)
+circuit.add_gate(T=3, key=(2,3), gate=quasar.Gate.CNOT)
+print(circuit)
 ```
 
 # Rationale
