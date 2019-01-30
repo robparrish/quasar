@@ -4,7 +4,7 @@ Quasar: an ultralight python-2.7/python-3.X quantum  circuit simulator package.
 
 # Simple Use
 
-Build a $N=4$ GHZ circuit:
+Build a *N*=4 GHZ circuit:
 ```python
 import quasar
 circuit = quasar.Circuit(N=4)
@@ -27,7 +27,7 @@ T   : |0|1|2|3|
 
 T   : |0|1|2|3|
 ```
-Simulate the 
+Simulate the state vector after circuit execution:
 ```python
 wfn = circuit.simulate()
 print(wfn)
@@ -38,6 +38,7 @@ print(wfn)
  0.        +0.j 0.        +0.j 0.        +0.j 0.        +0.j
  0.        +0.j 0.        +0.j 0.        +0.j 0.70710678+0.j]
 ```
+Computing 1-qubit Pauli expectation values <I_A>, <X_A>, <Y_A>, and <Z_A> indicates that the individual qubits are equally likely to be observed in +Z or -Z: 
 ```python
 PA = quasar.Circuit.compute_pauli_1(wfn=wfn, A=0)
 print(PA)
@@ -45,6 +46,7 @@ print(PA)
 ```text
 [1. 0. 0. 0.]
 ```
+But, computing 2-qubit expectation values like <Z_A * Z_B> (the lower right entry below) indicates that observations between pairs of qubits are perfectly positively correlated:
 ```python
 PAB = circuit.compute_pauli_2(wfn=wfn, A=0, B=1)
 print(PAB)
