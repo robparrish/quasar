@@ -1,4 +1,4 @@
-# Quasar: a lightweight python simulator for quantum circuits
+# Quasar: an ultralight python-2.7/python-3.X quantum simulator package
 # Copyright (C) 2019 Robert Parrish
 # 
 # This library is free software; you can redistribute it and/or
@@ -22,7 +22,7 @@
 import numpy as np
 import collections
 
-""" Quasar: an ultralite quantum simulator
+""" Quasar: an ultralight python-2.7/python-3.X quantum simulator package
 
 Note on Qubit Order:
 
