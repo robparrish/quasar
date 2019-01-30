@@ -2,6 +2,14 @@
 
 Quasar: an ultralight python-2.7/python-3.X quantum  circuit simulator package.
 
+# Simple Use
+
+```
+import quasar
+```
+
+# Rationale
+
 There are a million quantum circuit simulation packages out there - so why
 write another one? Three reasons:
 
