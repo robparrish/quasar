@@ -1207,7 +1207,7 @@ class Circuit(object):
         # Build moment strings
         moments = []
         for T in range(self.nmoment):
-            moments.append(self.diagram_moment(
+            moments.append(self.ascii_diagram_moment(
                 T=T,
                 adjust_for_T=False if time_lines=='neither' else True,
                 ))
