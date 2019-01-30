@@ -4,6 +4,7 @@ Quasar: an ultralight python-2.7/python-3.X quantum  circuit simulator package.
 
 # Simple Use
 
+Build a $N=4$ GHZ circuit:
 ```python
 import quasar
 circuit = quasar.Circuit(N=4)
@@ -12,6 +13,47 @@ circuit.add_gate(T=1, key=(0,1), gate=quasar.Gate.CNOT)
 circuit.add_gate(T=2, key=(1,2), gate=quasar.Gate.CNOT)
 circuit.add_gate(T=3, key=(2,3), gate=quasar.Gate.CNOT)
 print(circuit)
+```
+```text
+T   : |0|1|2|3|
+               
+|0> : -H-@-----
+         |     
+|1> : ---X-@---
+           |   
+|2> : -----X-@-
+             | 
+|3> : -------X-
+
+T   : |0|1|2|3|
+```
+Simulate the 
+```python
+wfn = circuit.simulate()
+print(wfn)
+```
+```text
+[0.70710678+0.j 0.        +0.j 0.        +0.j 0.        +0.j
+ 0.        +0.j 0.        +0.j 0.        +0.j 0.        +0.j
+ 0.        +0.j 0.        +0.j 0.        +0.j 0.        +0.j
+ 0.        +0.j 0.        +0.j 0.        +0.j 0.70710678+0.j]
+```
+```python
+PA = quasar.Circuit.compute_pauli_1(wfn=wfn, A=0)
+print(PA)
+```
+```text
+[1. 0. 0. 0.]
+```
+```python
+PAB = circuit.compute_pauli_2(wfn=wfn, A=0, B=1)
+print(PAB)
+```
+```text
+[[1. 0. 0. 0.]
+ [0. 0. 0. 0.]
+ [0. 0. 0. 0.]
+ [0. 0. 0. 1.]]
 ```
 
 # Rationale
