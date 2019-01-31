@@ -27,7 +27,7 @@ T   : |0|1|2|3|
 
 T   : |0|1|2|3|
 ```
-Simulate the state vector after circuit execution:
+Simulate the evolution of the state vector through the circuit (aside - see `simulate_steps` to see the details of the state vector through time):
 ```python
 wfn = circuit.simulate()
 print(wfn)
