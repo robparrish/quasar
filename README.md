@@ -2,7 +2,7 @@
 
 Quasar: an ultralight python-2.7/python-3.X quantum  circuit simulator package.
 
-# Simple Use
+# Sample Use
 
 Build a *N*=4 GHZ circuit:
 ```python
