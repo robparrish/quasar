@@ -48,7 +48,7 @@ print(PA)
 ```
 But, computing 2-qubit expectation values like <Z_A * Z_B> (the lower right entry below) indicates that observations between pairs of qubits are perfectly positively correlated:
 ```python
-PAB = circuit.compute_pauli_2(wfn=wfn, A=0, B=1)
+PAB = quasar.Circuit.compute_pauli_2(wfn=wfn, A=0, B=1)
 print(PAB)
 ```
 ```text
