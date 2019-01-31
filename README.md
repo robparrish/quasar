@@ -100,4 +100,4 @@ Rob Parrish - robparrish@gmail.com
 
 # Acknowledgements
 
-Quasar was built as a weekend hobby project while I was getting started with QIS jointly with QC Ware Corp. and SLAC National Accelerator Laboratory. I am grateful for many useful discussions with Peter McMahon, Fabio Sanchez, Juan Ignacio Adame, Ed Hohenstein, and Todd Martinez on this topic.
+Quasar was built as a weekend hobby project while I was getting started with QIS jointly with QC Ware Corp. and SLAC National Accelerator Laboratory. I am grateful for many useful discussions with Peter McMahon, Fabio Sanches, Juan Ignacio Adame, Ed Hohenstein, and Todd Martinez on this topic.
